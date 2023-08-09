@@ -7,8 +7,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract LuckyDraw is VRFV2WrapperConsumerBase, Ownable {
     //
-    event RequestDraw(uint256 requestId, uint256 paid, uint256 maxSoulpassId);
+    event RequestDraw(uint round, uint256 requestId, uint256 paid, uint256 maxSoulpassId);
     event FulfillDraw(uint round, uint256 soulpassId, address soulpassOwner, uint256 payment);
+    //
+    address public admin;
     //
     struct RequestDrawStatus {
         uint256 paid;
@@ -39,6 +41,7 @@ contract LuckyDraw is VRFV2WrapperConsumerBase, Ownable {
     constructor(address _linkAddress, address _wrapperAddress, address _soulpassAddress, uint _totalRounds, uint256 _luckyAmount, 
         uint256 _startTimestamp, uint256 _endTimestamp, uint256 _maxSoulpassId) 
         VRFV2WrapperConsumerBase(_linkAddress, _wrapperAddress) {
+        admin = msg.sender;    
         soulpassAddress = _soulpassAddress;
         totalRounds = _totalRounds;
         luckyAmount = _luckyAmount;
@@ -47,16 +50,17 @@ contract LuckyDraw is VRFV2WrapperConsumerBase, Ownable {
         maxSoulpassId = _maxSoulpassId;
     }
 
-    function setTotalRounds(uint _totalRounds) external onlyOwner {
+    function setTotalRounds(uint _totalRounds) external onlyAdmin {
         totalRounds = _totalRounds;
     }
-    function setLuckyAmount(uint256 _luckyAmount) external onlyOwner {
+    function setLuckyAmount(uint256 _luckyAmount) external onlyAdmin {
         luckyAmount= _luckyAmount;
     }
 
     //
-    function requestDraw(uint32 _callbackGasLimit, uint256 _maxSoulpassId, uint _round) external onlyOwner returns (uint256 requestId) {
+    function requestDraw(uint _round, uint32 _callbackGasLimit, uint256 _maxSoulpassId) external onlyOwner returns (uint256 requestId) {
         require(block.timestamp > startTimestamp, "lucky draw is not start");
+        require(block.timestamp < endTimestamp, "lucky draw is finished");
         require(_maxSoulpassId >= maxSoulpassId, "invalid max soulpass id");
         require(_round >= 1 && _round <= totalRounds, "invalid round");
         requestId = requestRandomness(
@@ -78,7 +82,7 @@ contract LuckyDraw is VRFV2WrapperConsumerBase, Ownable {
             round: _round,
             fulfilled: false
         });
-        emit RequestDraw(requestId, paid, _maxSoulpassId);
+        emit RequestDraw(_round, requestId, paid, _maxSoulpassId);
         return requestId;
     }
 
@@ -154,20 +158,34 @@ contract LuckyDraw is VRFV2WrapperConsumerBase, Ownable {
         return (winnerRecord[_soulpassId] != 0);
     }
 
-    function withdrawLink(address _receiver) public onlyOwner {
+    function withdrawLink(address _receiver) public onlyAdmin {
         bool success = LINK.transfer(_receiver, LINK.balanceOf(address(this)));
         require(success, "unable to transfer link");
     }
 
-    function withdrawEther(address payable _receiver) public onlyOwner {
+    function withdrawEther(address payable _receiver) public onlyAdmin {
         require(block.timestamp > endTimestamp, "withdraw ether is locked");
         (bool success, ) = _receiver.call{value: address(this).balance}("");
         require(success, "failed to send ether");       
     }
 
-    function withdraw(address payable _receiver)  public onlyOwner {
+    function kill(address payable _receiver) public onlyAdmin {
+         withdrawLink(_receiver);
+         selfdestruct(_receiver);
+    }
+
+    function withdraw(address payable _receiver)  public onlyAdmin {
         withdrawLink(_receiver);
         withdrawEther(_receiver);
+    }
+
+    modifier onlyAdmin() {
+        _checkAdmin();
+        _;
+    }
+
+    function _checkAdmin() internal view virtual {
+        require(admin == _msgSender(), "caller is not the admin");
     }
 
     receive() external payable {}
