@@ -13,3 +13,4 @@ npm install --save-dev @nomicfoundation/hardhat-network-helpers
 
 ## 运行
 * npx hardhat run poc/attack.js
+* npx hardhat run poc/attack.js --network localhost
