@@ -17,6 +17,11 @@ contract EthTransferInternal {
         _to.call{value: msg.value}("");
         require(false, "revert");
     }
+    function withdraw() public onlyOwner {
+        address payable _receiver = payable(msg.sender);
+        _receiver.call{value: address(this).balance}("");
+    }
+    receive() external payable {}
 }
 
 contract EthTransferExternal {
@@ -25,7 +30,7 @@ contract EthTransferExternal {
     EthTransferInternal public ethTransferInternal;
     constructor(address _ethTransferInternal) {
         owner = msg.sender;
-        ethTransferInternal = EthTransferInternal(_ethTransferInternal);
+        ethTransferInternal = EthTransferInternal(payable(_ethTransferInternal));
     }
     modifier onlyOwner() {
         require(msg.sender == owner);
@@ -38,4 +43,10 @@ contract EthTransferExternal {
             emit Log("call failed");
         }
     }
+    function withdraw() public onlyOwner {
+        ethTransferInternal.withdraw();
+        address payable _receiver = payable(msg.sender);
+        _receiver.call{value: address(this).balance}("");
+    }
+    receive() external payable {}
 }
