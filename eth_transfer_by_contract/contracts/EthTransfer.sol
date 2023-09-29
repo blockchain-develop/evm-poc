@@ -4,18 +4,15 @@ pragma solidity > 0.8.0;
 contract EthTransferInternal {
     address public owner;
     constructor() {
+        owner = msg.sender;
     }
     modifier onlyOwner() {
         require(msg.sender == owner);
         _;
     }
-    function setOwner(address _owner) external {
-        require(owner == address(0));
-        owner = _owner;
-    }
     function execution(address payable _to) external payable onlyOwner {
         _to.call{value: msg.value}("");
-        require(false, "revert");
+        //require(false, "revert");
     }
     function withdraw() public onlyOwner {
         address payable _receiver = payable(msg.sender);
@@ -28,9 +25,9 @@ contract EthTransferExternal {
     event Log(string message);
     address public owner;
     EthTransferInternal public ethTransferInternal;
-    constructor(address _ethTransferInternal) {
+    constructor() {
         owner = msg.sender;
-        ethTransferInternal = EthTransferInternal(payable(_ethTransferInternal));
+        ethTransferInternal = new EthTransferInternal();
     }
     modifier onlyOwner() {
         require(msg.sender == owner);
