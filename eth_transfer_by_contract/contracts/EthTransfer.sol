@@ -12,7 +12,7 @@ contract EthTransferInternal {
     }
     function execution(address payable _to) external payable onlyOwner {
         _to.call{value: msg.value}("");
-        //require(false, "revert");
+        require(false, "revert");
     }
     function withdraw() public onlyOwner {
         address payable _receiver = payable(msg.sender);
