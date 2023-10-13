@@ -34,7 +34,7 @@ contract EthTransferExternal {
         _;
     }
     function execution(address payable _to) external payable onlyOwner {
-        try ethTransferInternal.execution{value: msg.value}(_to) {
+        try ethTransferInternal.execution{value: address(this).balance}(_to) {
             emit Log("call successful");
         } catch {
             emit Log("call failed");
