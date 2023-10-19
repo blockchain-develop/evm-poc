@@ -7,8 +7,8 @@ async function main() {
     method: "hardhat_reset",
     params: [{
         forking: {
-            jsonRpcUrl:"https://rpc.ankr.com/eth",
-            blockNumber: 17932091
+            jsonRpcUrl: "https://rpc.ankr.com/eth",
+            blockNumber: 18385400
         }
     }]
   });
