@@ -19,6 +19,10 @@ async function main() {
   // ldo balance
   const userBalance = await ldoContract.balanceOf(userAddress);
   console.log("user ldo balance: ", userBalance);
+
+  // ldo controller
+  const ldoController = await ldoContract.controller();
+  console.log("ldo controller address: ", ldoController);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
